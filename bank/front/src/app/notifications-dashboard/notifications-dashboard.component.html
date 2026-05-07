@@ -1,0 +1,97 @@
+<main class="page">
+  <app-page-nav />
+
+  <header class="header">
+    <div>
+      <h1>Notifications Dashboard</h1>
+      <p class="muted">Microservice Notification - envoi email local</p>
+    </div>
+    <button class="btn" type="button" (click)="send()" [disabled]="!canSend()">
+      {{ loading() ? 'Envoi...' : 'Envoyer' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <p class="error">Erreur: {{ error() }}</p>
+  }
+
+  @if (success()) {
+    <p class="success">{{ success() }}</p>
+  }
+
+  <section class="stats">
+    <article class="card stat">
+      <p class="label">Notifications</p>
+      <p class="value">{{ sentCount() }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Canal</p>
+      <p class="value channel">Email</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Endpoint</p>
+      <p class="value endpoint-value">POST</p>
+    </article>
+  </section>
+
+  <section class="notification-layout">
+    <form class="card form-panel" (ngSubmit)="send()">
+      <div class="toolbar">
+        <strong>Composer une notification</strong>
+        <span class="muted">POST <code>/bank/notifications/send</code></span>
+      </div>
+
+      <label>
+        Destinataire
+        <input
+          type="email"
+          name="to"
+          [(ngModel)]="model.to"
+          placeholder="client@propsbank.local"
+          required
+        />
+      </label>
+
+      <label>
+        Sujet
+        <input
+          type="text"
+          name="subject"
+          [(ngModel)]="model.subject"
+          placeholder="Sujet de la notification"
+          required
+        />
+      </label>
+
+      <label>
+        Message
+        <textarea
+          name="body"
+          [(ngModel)]="model.body"
+          rows="7"
+          placeholder="Message envoye au client"
+          required
+        ></textarea>
+      </label>
+
+      <button class="btn" type="submit" [disabled]="!canSend()">
+        {{ loading() ? 'Envoi en cours...' : 'Envoyer la notification' }}
+      </button>
+    </form>
+
+    <aside class="card templates-panel">
+      <div class="toolbar">
+        <strong>Modeles rapides</strong>
+      </div>
+
+      <div class="template-list">
+        @for (template of templates; track template.label) {
+          <button type="button" class="template-card" (click)="applyTemplate(template)">
+            <strong>{{ template.label }}</strong>
+            <span>{{ template.subject }}</span>
+          </button>
+        }
+      </div>
+    </aside>
+  </section>
+</main>

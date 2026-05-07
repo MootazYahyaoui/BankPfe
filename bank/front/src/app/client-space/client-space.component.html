@@ -1,0 +1,136 @@
+<main class="page">
+  <app-page-nav />
+
+  <header class="header">
+    <div>
+      <h1>Client Banking Space</h1>
+      <p class="muted">Vue personnelle de votre compte bancaire</p>
+    </div>
+    <button class="btn" (click)="load()" [disabled]="loading()">Refresh</button>
+  </header>
+
+  @if (error()) {
+    <p class="error">Erreur: {{ error() }}</p>
+  }
+  @if (warning()) {
+    <p class="muted card">{{ warning() }}</p>
+  }
+
+  <section class="stats">
+    <article class="card stat">
+      <p class="label">Client</p>
+      <p class="value">{{ fullName() || '-' }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Compte</p>
+      <p class="value">{{ account()?.id || '-' }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Solde</p>
+      <p class="value">{{ (account()?.balance ?? 0) | currency : 'TND ' : 'symbol' : '1.2-2' }}</p>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <strong>Informations client</strong>
+      <span class="muted">Source: Authentication + Customer DB</span>
+    </div>
+    <div class="grid">
+      <p><strong>Username:</strong> {{ profile()?.username }}</p>
+      <p><strong>Email:</strong> {{ profile()?.email }}</p>
+      <p><strong>CIN:</strong> {{ profile()?.cin }}</p>
+      <p><strong>Date naissance:</strong> {{ profile()?.dateOfBirth | date : 'dd/MM/yyyy' }}</p>
+      <p><strong>Ville:</strong> {{ customer()?.placeOfBirth }}</p>
+      <p><strong>Nationalite:</strong> {{ customer()?.nationality }}</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <strong>Actions rapides client</strong>
+      <span class="muted">Recharge, retrait, transfert</span>
+    </div>
+    @if (actionMessage()) {
+      <p class="muted">{{ actionMessage() }}</p>
+    }
+    <div class="grid">
+      <div>
+        <p><strong>Recharge / Retrait</strong></p>
+        <input
+          type="number"
+          placeholder="Amount"
+          [value]="operationForm().amount"
+          (input)="updateOperationField('amount', $any($event.target).value)"
+        />
+        <input
+          type="text"
+          placeholder="Description"
+          [value]="operationForm().description"
+          (input)="updateOperationField('description', $any($event.target).value)"
+        />
+        <div class="toolbar">
+          <button class="btn" (click)="credit()" [disabled]="actionLoading() || !account()">Recharger</button>
+          <button class="btn" (click)="debit()" [disabled]="actionLoading() || !account()">Retirer</button>
+        </div>
+      </div>
+      <div>
+        <p><strong>Transferer vers un autre compte</strong></p>
+        <input
+          type="text"
+          placeholder="CIN, nom ou numero compte destinataire"
+          [value]="transferForm().beneficiaryRef"
+          (input)="updateTransferField('beneficiaryRef', $any($event.target).value)"
+        />
+        <input
+          type="number"
+          placeholder="Amount"
+          [value]="transferForm().amount"
+          (input)="updateTransferField('amount', $any($event.target).value)"
+        />
+        <input
+          type="text"
+          placeholder="Description"
+          [value]="transferForm().description"
+          (input)="updateTransferField('description', $any($event.target).value)"
+        />
+        <button class="btn" (click)="transfer()" [disabled]="actionLoading() || !account()">Transferer</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card operations">
+    <div class="toolbar">
+      <strong>Operations recentes</strong>
+      <span class="muted">Source: Account DB</span>
+    </div>
+    @if (operations().length === 0) {
+      <p class="muted">Aucune operation disponible pour le moment.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Operation</th>
+              <th>Type</th>
+              <th>Montant</th>
+              <th>Description</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (op of operations(); track op.id) {
+              <tr>
+                <td>{{ op.id }}</td>
+                <td><span class="badge">{{ op.type }}</span></td>
+                <td>{{ op.amount | currency : 'TND ' : 'symbol' : '1.2-2' }}</td>
+                <td>{{ op.description }}</td>
+                <td>{{ op.dateTime | date : 'dd/MM/yyyy HH:mm' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>

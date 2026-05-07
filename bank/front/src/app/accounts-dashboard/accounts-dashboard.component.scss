@@ -1,0 +1,20 @@
+@use '../dashboard/dashboard.component.scss';
+
+.operations {
+  margin-top: 14px;
+}
+
+.badge.status {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.badge.credit {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge.debit {
+  background: #fee2e2;
+  color: #991b1b;
+}

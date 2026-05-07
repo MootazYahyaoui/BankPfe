@@ -1,0 +1,85 @@
+<main class="page">
+  <app-page-nav />
+
+  <header class="header">
+    <div>
+      <h1>Props Bank Dashboard</h1>
+      <p class="muted">Microservice Customer - environnement local</p>
+    </div>
+    <button class="btn" (click)="load(currentPage())" [disabled]="loading()">Refresh</button>
+  </header>
+
+  @if (error()) {
+    <p class="error">Erreur: {{ error() }}</p>
+  }
+
+  <section class="stats">
+    <article class="card stat">
+      <p class="label">Total clients</p>
+      <p class="value">{{ totalCustomers() }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Hommes</p>
+      <p class="value">{{ maleCount() }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Femmes</p>
+      <p class="value">{{ femaleCount() }}</p>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <input
+        type="text"
+        placeholder="Rechercher par nom, CIN ou email..."
+        [value]="keyword()"
+        (input)="updateKeyword($any($event.target).value)"
+      />
+      <span class="muted">GET <code>/bank/customers/list</code></span>
+    </div>
+    <div class="toolbar">
+      <button class="btn" (click)="previousPage()" [disabled]="!canGoPrevious()">Previous</button>
+      <span class="muted">Page {{ currentPage() + 1 }} / {{ totalPages() }}</span>
+      <button class="btn" (click)="nextPage()" [disabled]="!canGoNext()">Next</button>
+    </div>
+
+    @if (loading()) {
+      <p class="muted">Chargement en cours...</p>
+    } @else if (customers().length === 0) {
+      <p class="muted">Aucun client à afficher.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom complet</th>
+              <th>CIN</th>
+              <th>Email</th>
+              <th>Genre</th>
+              <th>Naissance</th>
+              <th>Ville</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of customers(); track c.id) {
+              <tr>
+                <td>{{ c.firstname }} {{ c.lastname }}</td>
+                <td>{{ c.cin }}</td>
+                <td>{{ c.email }}</td>
+                <td>
+                  <span class="badge" [ngClass]="c.gender === 'F' ? 'f' : 'm'">
+                    {{ c.gender }}
+                  </span>
+                </td>
+                <td>{{ c.dateOfBirth | date : 'dd/MM/yyyy' }}</td>
+                <td>{{ c.placeOfBirth }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>
+

@@ -1,0 +1,172 @@
+<main class="page">
+  <app-page-nav />
+
+  <header class="header">
+    <div>
+      <h1>Accounts Dashboard</h1>
+      <p class="muted">Microservice Account - environnement local</p>
+    </div>
+    <button class="btn" (click)="load()" [disabled]="loading()">Refresh</button>
+  </header>
+
+  @if (error()) {
+    <p class="error">Erreur: {{ error() }}</p>
+  }
+
+  <section class="stats">
+    <article class="card stat">
+      <p class="label">Comptes</p>
+      <p class="value">{{ accountsCount() }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Actives</p>
+      <p class="value">{{ activatedAccounts() }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Solde total</p>
+      <p class="value">{{ totalBalance() | currency : 'TND ' : 'symbol' : '1.2-2' }}</p>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <strong>Actions Admin</strong>
+      <span class="muted">Creation, recharge, retrait, transfert, suppression</span>
+    </div>
+    @if (actionMessage()) {
+      <p class="muted">{{ actionMessage() }}</p>
+    }
+    <div class="grid">
+      <div>
+        <p><strong>Recharge / Retrait</strong></p>
+        <input
+          type="text"
+          placeholder="CIN, nom ou numero compte"
+          [value]="operationForm().customerRef"
+          (input)="updateOperationField('customerRef', $any($event.target).value)"
+        />
+        <input
+          type="number"
+          placeholder="Amount"
+          [value]="operationForm().amount"
+          (input)="updateOperationField('amount', $any($event.target).value)"
+        />
+        <input
+          type="text"
+          placeholder="Description"
+          [value]="operationForm().description"
+          (input)="updateOperationField('description', $any($event.target).value)"
+        />
+        <div class="toolbar">
+          <button class="btn" (click)="credit()" [disabled]="actionLoading()">Recharge</button>
+          <button class="btn" (click)="debit()" [disabled]="actionLoading()">Retrait</button>
+          <button class="btn" (click)="deleteAccount()" [disabled]="actionLoading()">Supprimer compte</button>
+        </div>
+      </div>
+      <div>
+        <p><strong>Transfert entre comptes</strong></p>
+        <input
+          type="text"
+          placeholder="Source: CIN, nom ou numero compte"
+          [value]="transferForm().fromRef"
+          (input)="updateTransferField('fromRef', $any($event.target).value)"
+        />
+        <input
+          type="text"
+          placeholder="Destination: CIN, nom ou numero compte"
+          [value]="transferForm().toRef"
+          (input)="updateTransferField('toRef', $any($event.target).value)"
+        />
+        <input
+          type="number"
+          placeholder="Amount"
+          [value]="transferForm().amount"
+          (input)="updateTransferField('amount', $any($event.target).value)"
+        />
+        <input
+          type="text"
+          placeholder="Description"
+          [value]="transferForm().description"
+          (input)="updateTransferField('description', $any($event.target).value)"
+        />
+        <button class="btn" (click)="transfer()" [disabled]="actionLoading()">Transferer</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <strong>Comptes bancaires</strong>
+      <span class="muted">Source: Account + Customer DB</span>
+    </div>
+
+    @if (loading()) {
+      <p class="muted">Chargement en cours...</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Compte</th>
+              <th>Client</th>
+              <th>CIN</th>
+              <th>Devise</th>
+              <th>Statut</th>
+              <th>Solde</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.customer.id) {
+              <tr>
+                <td>{{ row.account?.id || '-' }}</td>
+                <td>{{ row.customer.firstname }} {{ row.customer.lastname }}</td>
+                <td>{{ row.customer.cin }}</td>
+                <td>{{ row.account?.currency || 'TND' }}</td>
+                <td><span class="badge status">{{ row.account?.status || 'NO_ACCOUNT' }}</span></td>
+                <td>{{ (row.account?.balance ?? 0) | currency : 'TND ' : 'symbol' : '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="card operations">
+    <div class="toolbar">
+      <strong>Operations recentes</strong>
+      <span class="muted">GET <code>/bank/accounts/queries/all-operations</code></span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Compte</th>
+            <th>Type</th>
+            <th>Montant</th>
+            <th>Description</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (op of operations(); track op.id) {
+            <tr>
+              <td>{{ op.id }}</td>
+              <td>{{ op.accountId }}</td>
+              <td>
+                <span class="badge" [class.credit]="op.type === 'CREDIT'" [class.debit]="op.type === 'DEBIT'">
+                  {{ op.type }}
+                </span>
+              </td>
+              <td>{{ op.amount | currency : 'TND ' : 'symbol' : '1.2-2' }}</td>
+              <td>{{ op.description }}</td>
+              <td>{{ op.dateTime | date : 'dd/MM/yyyy HH:mm' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>

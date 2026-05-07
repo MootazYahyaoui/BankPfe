@@ -1,0 +1,57 @@
+{
+  "/api": {
+    "target": "http://localhost:8886",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api": ""
+    }
+  },
+  "/auth-api": {
+    "target": "http://localhost:8885",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/auth-api": ""
+    }
+  },
+  "/account-api": {
+    "target": "http://localhost:8887",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/account-api": ""
+    }
+  },
+  "/notification-api": {
+    "target": "http://localhost:8889",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/notification-api": ""
+    }
+  },
+  "/gateway-api": {
+    "target": "http://localhost:8888",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/gateway-api": ""
+    }
+  },
+  "/discovery-api": {
+    "target": "http://localhost:8761",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/discovery-api": ""
+    }
+  }
+}
+

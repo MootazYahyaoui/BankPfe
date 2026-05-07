@@ -1,0 +1,84 @@
+<main class="page">
+  <app-page-nav />
+
+  <header class="header">
+    <div>
+      <h1>Authentication Dashboard</h1>
+      <p class="muted">Microservice Authentication - environnement local</p>
+    </div>
+    <button class="btn" (click)="load()" [disabled]="loading()">Refresh</button>
+  </header>
+
+  @if (error()) {
+    <p class="error">Erreur: {{ error() }}</p>
+  }
+  @if (actionMessage()) {
+    <p class="muted">{{ actionMessage() }}</p>
+  }
+
+  <section class="stats">
+    <article class="card stat">
+      <p class="label">Utilisateurs</p>
+      <p class="value">{{ users().length }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Actifs</p>
+      <p class="value">{{ activeUsers() }}</p>
+    </article>
+    <article class="card stat">
+      <p class="label">Suspendus</p>
+      <p class="value">{{ disabledUsers() }}</p>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <strong>Comptes applicatifs</strong>
+      <span class="muted">GET <code>/bank/users/all</code></span>
+    </div>
+
+    @if (loading()) {
+      <p class="muted">Chargement en cours...</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Etat</th>
+              <th>Derniere connexion</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of users(); track u.id) {
+              <tr>
+                <td>{{ u.firstname }} {{ u.lastname }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.email }}</td>
+                <td><span class="badge role">{{ u.roles.join(', ') }}</span></td>
+                <td>
+                  <span class="badge" [class.ok]="u.enabled" [class.ko]="!u.enabled">
+                    {{ u.enabled ? 'ACTIVE' : 'OFF' }}
+                  </span>
+                </td>
+                <td>{{ u.lastLogin ? (u.lastLogin | date : 'dd/MM/yyyy HH:mm') : 'Jamais' }}</td>
+                <td>
+                  <div class="toolbar">
+                    <button class="btn" (click)="toggleStatus(u.id)">
+                      {{ u.enabled ? 'Suspendre' : 'Activer' }}
+                    </button>
+                    <button class="btn" (click)="deleteUser(u.id)">Supprimer</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>

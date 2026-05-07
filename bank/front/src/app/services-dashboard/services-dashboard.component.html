@@ -1,0 +1,37 @@
+<main class="page">
+  <app-page-nav />
+
+  <header class="header">
+    <div>
+      <h1>Dashboard Services</h1>
+      <p>Verification de connexion frontend vers plusieurs backends</p>
+    </div>
+
+    <button class="btn" (click)="refresh()">Recheck</button>
+  </header>
+
+  <section class="grid">
+    @for (svc of services(); track svc.name) {
+      <article class="card">
+        <h2>{{ svc.name }}</h2>
+
+        <p class="endpoint">
+          {{ svc.endpoint }}
+        </p>
+
+        <p
+          class="status"
+          [class.up]="svc.status === 'up'"
+          [class.down]="svc.status === 'down'"
+          [class.checking]="svc.status === 'checking'"
+        >
+          {{ svc.status.toUpperCase() }}
+        </p>
+
+        <p class="details">
+          {{ svc.details }}
+        </p>
+      </article>
+    }
+  </section>
+</main>

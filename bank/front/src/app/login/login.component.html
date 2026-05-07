@@ -1,0 +1,90 @@
+<main class="auth-page">
+  <section class="brand-panel">
+    <img src="/UIB-logo.png" alt="UIB Logo" />
+    <h1>Props Bank Digital Space</h1>
+    <p>
+      Espace securise pour clients. Connectez-vous pour gerer les comptes,
+      operations et services bancaires.
+    </p>
+    <p class="admin-hint">Compte admin par defaut: admin / fedi123</p>
+  </section>
+
+  <section class="auth-card">
+    <div class="switchers">
+      <button class="tab" [class.active]="mode() === 'login'" (click)="switchMode('login')">Login</button>
+      <button class="tab" [class.active]="mode() === 'signup'" (click)="switchMode('signup')">Sign Up</button>
+    </div>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+    @if (success()) {
+      <p class="success">{{ success() }}</p>
+    }
+
+    @if (mode() === 'login') {
+      <form (ngSubmit)="submit()">
+        <label>
+          Username
+          <input type="text" [(ngModel)]="credentials.username" name="username" required />
+        </label>
+        <label>
+          Password
+          <input type="password" [(ngModel)]="credentials.password" name="password" required />
+        </label>
+        <button class="btn full" [disabled]="loading()">
+          {{ loading() ? 'Connexion...' : 'Se connecter' }}
+        </button>
+      </form>
+    } @else {
+      <form (ngSubmit)="submit()">
+        <label>
+          First name
+          <input type="text" [(ngModel)]="registration.firstname" name="firstname" required />
+        </label>
+        <label>
+          Last name
+          <input type="text" [(ngModel)]="registration.lastname" name="lastname" required />
+        </label>
+        <label>
+          CIN
+          <input type="text" [(ngModel)]="registration.cin" name="cin" required />
+        </label>
+        <label>
+          Email
+          <input type="email" [(ngModel)]="registration.email" name="email" required />
+        </label>
+        <label>
+          Username
+          <input type="text" [(ngModel)]="registration.username" name="signupUsername" required />
+        </label>
+        <label>
+          Password
+          <input type="password" [(ngModel)]="registration.password" name="signupPassword" required />
+        </label>
+        <label>
+          Place of birth
+          <input type="text" [(ngModel)]="registration.placeOfBirth" name="placeOfBirth" required />
+        </label>
+        <label>
+          Date of birth
+          <input type="date" [(ngModel)]="registration.dateOfBirth" name="dateOfBirth" required />
+        </label>
+        <label>
+          Nationality
+          <input type="text" [(ngModel)]="registration.nationality" name="nationality" required />
+        </label>
+        <label>
+          Gender
+          <select [(ngModel)]="registration.gender" name="gender">
+            <option value="M">M</option>
+            <option value="F">F</option>
+          </select>
+        </label>
+        <button class="btn full" [disabled]="loading()">
+          {{ loading() ? 'Creation...' : 'Creer le compte' }}
+        </button>
+      </form>
+    }
+  </section>
+</main>

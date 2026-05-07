@@ -1,0 +1,11 @@
+.card {
+  border-top: 3px solid #cbd5e1;
+}
+
+.card:has(.status.up) {
+  border-top-color: var(--success);
+}
+
+.card:has(.status.down) {
+  border-top-color: var(--danger);
+}
