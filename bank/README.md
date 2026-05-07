@@ -39,10 +39,6 @@ npm start
 
 Open: `http://localhost:4200`
 
-## Default Admin
-
-- Username: `admin`
-- Password: `fedi123`
 
 ## Local URLs
 
