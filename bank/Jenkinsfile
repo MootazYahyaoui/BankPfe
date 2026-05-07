@@ -1,15 +1,42 @@
 pipeline {
   agent any
+
+  options {
+    timestamps()
+  }
+
   stages {
     stage('Checkout') {
       steps {
         checkout scm
       }
     }
-    stage('Test') {
+
+    stage('Backend Build') {
       steps {
-        echo 'Pipeline OK'
+        dir('bank') {
+          sh 'chmod +x mvnw || true'
+          sh './mvnw -q -DskipTests clean package'
+        }
       }
+    }
+
+    stage('Frontend Build') {
+      steps {
+        dir('bank/front') {
+          sh 'npm ci || npm install'
+          sh 'npm run build'
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo 'Build backend + frontend termine avec succes.'
+    }
+    failure {
+      echo 'Build echoue. Verifier Console Output.'
     }
   }
 }
