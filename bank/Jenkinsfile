@@ -15,8 +15,7 @@ pipeline {
     stage('Backend Build') {
       steps {
         dir('bank') {
-          sh 'chmod +x mvnw || true'
-          sh './mvnw -q -DskipTests clean package'
+          sh 'mvn -DskipTests clean package'
         }
       }
     }
