@@ -13,6 +13,9 @@ pipeline {
 
   environment {
     IMAGE_TAG = "${env.BUILD_NUMBER}"
+    MINIKUBE_PROFILE = "jenkins-ci"
+    MINIKUBE_HOME = "/var/lib/jenkins/.minikube"
+    KUBECONFIG_PATH = "/var/lib/jenkins/.kube/config"
   }
 
   stages {
@@ -85,6 +88,10 @@ pipeline {
       steps {
         dir('bank') {
           sh '''
+            export MINIKUBE_HOME=${MINIKUBE_HOME}
+            export KUBECONFIG=${KUBECONFIG_PATH}
+            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} update-context
+            kubectl config use-context ${MINIKUBE_PROFILE}
             kubectl version --client
             kubectl get nodes
 
