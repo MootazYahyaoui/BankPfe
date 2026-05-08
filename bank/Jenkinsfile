@@ -5,6 +5,15 @@ pipeline {
     timestamps()
   }
 
+  parameters {
+    string(name: 'DOCKERHUB_USERNAME', defaultValue: '', description: 'Docker Hub username (required if PUSH_IMAGES=true)')
+    booleanParam(name: 'PUSH_IMAGES', defaultValue: false, description: 'Push images to Docker Hub')
+  }
+
+  environment {
+    IMAGE_TAG = "${env.BUILD_NUMBER}"
+  }
+
   stages {
     stage('Checkout') {
       steps {
@@ -25,6 +34,45 @@ pipeline {
         dir('bank/front') {
           sh 'npm ci || npm install'
           sh 'npm run build'
+        }
+      }
+    }
+
+    stage('Docker Build') {
+      steps {
+        dir('bank') {
+          sh '''
+            IMAGE_PREFIX=${DOCKERHUB_USERNAME:-local}
+            docker build -t ${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG} discovery-service
+            docker build -t ${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG} gateway-service
+            docker build -t ${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG} authentication-service
+            docker build -t ${IMAGE_PREFIX}/customer-service:${IMAGE_TAG} customer-service
+            docker build -t ${IMAGE_PREFIX}/account-service:${IMAGE_TAG} account-service
+            docker build -t ${IMAGE_PREFIX}/notification-service:${IMAGE_TAG} notification-service
+            docker build -t ${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG} front
+          '''
+        }
+      }
+    }
+
+    stage('Docker Push') {
+      when {
+        expression { return params.PUSH_IMAGES && params.DOCKERHUB_USERNAME?.trim() }
+      }
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            IMAGE_PREFIX=${DOCKERHUB_USERNAME}
+            docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
+            docker push ${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG}
+            docker push ${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG}
+            docker push ${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG}
+            docker push ${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}
+            docker push ${IMAGE_PREFIX}/account-service:${IMAGE_TAG}
+            docker push ${IMAGE_PREFIX}/notification-service:${IMAGE_TAG}
+            docker push ${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG}
+          '''
         }
       }
     }
