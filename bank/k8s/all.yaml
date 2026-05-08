@@ -1,0 +1,333 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bank
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ALLOW_EMPTY_PASSWORD
+              value: "yes"
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: bank
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery-service
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discovery-service
+  template:
+    metadata:
+      labels:
+        app: discovery-service
+    spec:
+      containers:
+        - name: discovery-service
+          image: mootaaz/discovery-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8761
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discovery-service
+  namespace: bank
+spec:
+  selector:
+    app: discovery-service
+  ports:
+    - port: 8761
+      targetPort: 8761
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+        - name: gateway-service
+          image: mootaaz/gateway-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8888
+          env:
+            - name: DISCOVERY_SERVICE
+              value: http://discovery-service:8761/eureka/
+            - name: ALLOWED_ORIGINS
+              value: http://localhost:4200,http://frontend:80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: bank
+spec:
+  selector:
+    app: gateway-service
+  ports:
+    - port: 8888
+      targetPort: 8888
+      nodePort: 30888
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentication-service
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authentication-service
+  template:
+    metadata:
+      labels:
+        app: authentication-service
+    spec:
+      containers:
+        - name: authentication-service
+          image: mootaaz/authentication-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8885
+          env:
+            - name: DISCOVERY_SERVICE
+              value: http://discovery-service:8761/eureka/
+            - name: CUSTOMER_SERVICE_URL
+              value: http://customer-service:8886
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_USER
+              value: root
+            - name: MYSQL_PWD
+              value: ""
+            - name: MYSQL_DATABASE
+              value: db_user_new_devs_nours
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentication-service
+  namespace: bank
+spec:
+  selector:
+    app: authentication-service
+  ports:
+    - port: 8885
+      targetPort: 8885
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-service
+  template:
+    metadata:
+      labels:
+        app: customer-service
+    spec:
+      containers:
+        - name: customer-service
+          image: mootaaz/customer-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8886
+          env:
+            - name: DISCOVERY_SERVICE
+              value: http://discovery-service:8761/eureka/
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_USER
+              value: root
+            - name: MYSQL_PWD
+              value: ""
+            - name: MYSQL_DATABASE
+              value: customer_db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-service
+  namespace: bank
+spec:
+  selector:
+    app: customer-service
+  ports:
+    - port: 8886
+      targetPort: 8886
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: account-service
+  template:
+    metadata:
+      labels:
+        app: account-service
+    spec:
+      containers:
+        - name: account-service
+          image: mootaaz/account-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8887
+          env:
+            - name: CUSTOMER_SERVICE_URL
+              value: http://customer-service:8886
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql:3306/comptebancairennn?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-service
+  namespace: bank
+spec:
+  selector:
+    app: account-service
+  ports:
+    - port: 8887
+      targetPort: 8887
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: mootaaz/notification-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8889
+          env:
+            - name: DISCOVERY_SERVICE
+              value: http://discovery-service:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: bank
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 8889
+      targetPort: 8889
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bank-frontend
+  namespace: bank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bank-frontend
+  template:
+    metadata:
+      labels:
+        app: bank-frontend
+    spec:
+      containers:
+        - name: bank-frontend
+          image: mootaaz/bank-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: bank
+spec:
+  selector:
+    app: bank-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+  type: NodePort

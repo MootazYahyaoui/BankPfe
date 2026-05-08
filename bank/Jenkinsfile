@@ -101,22 +101,22 @@ pipeline {
             IMAGE_PREFIX=${DOCKERHUB_USERNAME}
 
             # Update image tags to current build number
-            kubectl set image deployment/discovery-service discovery-service=${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG} || true
-            kubectl set image deployment/gateway-service gateway-service=${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG} || true
-            kubectl set image deployment/authentication-service authentication-service=${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG} || true
-            kubectl set image deployment/customer-service customer-service=${IMAGE_PREFIX}/customer-service:${IMAGE_TAG} || true
-            kubectl set image deployment/account-service account-service=${IMAGE_PREFIX}/account-service:${IMAGE_TAG} || true
-            kubectl set image deployment/notification-service notification-service=${IMAGE_PREFIX}/notification-service:${IMAGE_TAG} || true
-            kubectl set image deployment/bank-frontend bank-frontend=${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG} || true
+            kubectl -n bank set image deployment/discovery-service discovery-service=${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG} || true
+            kubectl -n bank set image deployment/gateway-service gateway-service=${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG} || true
+            kubectl -n bank set image deployment/authentication-service authentication-service=${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG} || true
+            kubectl -n bank set image deployment/customer-service customer-service=${IMAGE_PREFIX}/customer-service:${IMAGE_TAG} || true
+            kubectl -n bank set image deployment/account-service account-service=${IMAGE_PREFIX}/account-service:${IMAGE_TAG} || true
+            kubectl -n bank set image deployment/notification-service notification-service=${IMAGE_PREFIX}/notification-service:${IMAGE_TAG} || true
+            kubectl -n bank set image deployment/bank-frontend bank-frontend=${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG} || true
 
             # Wait for rollouts
-            kubectl rollout status deployment/discovery-service --timeout=180s || true
-            kubectl rollout status deployment/gateway-service --timeout=180s || true
-            kubectl rollout status deployment/authentication-service --timeout=180s || true
-            kubectl rollout status deployment/customer-service --timeout=180s || true
-            kubectl rollout status deployment/account-service --timeout=180s || true
-            kubectl rollout status deployment/notification-service --timeout=180s || true
-            kubectl rollout status deployment/bank-frontend --timeout=180s || true
+            kubectl -n bank rollout status deployment/discovery-service --timeout=180s || true
+            kubectl -n bank rollout status deployment/gateway-service --timeout=180s || true
+            kubectl -n bank rollout status deployment/authentication-service --timeout=180s || true
+            kubectl -n bank rollout status deployment/customer-service --timeout=180s || true
+            kubectl -n bank rollout status deployment/account-service --timeout=180s || true
+            kubectl -n bank rollout status deployment/notification-service --timeout=180s || true
+            kubectl -n bank rollout status deployment/bank-frontend --timeout=180s || true
           '''
         }
       }
