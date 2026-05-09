@@ -90,6 +90,8 @@ pipeline {
           sh '''
             export MINIKUBE_HOME=${MINIKUBE_HOME}
             export KUBECONFIG=${KUBECONFIG_PATH}
+            # Cluster arrêté -> update-context échoue ; démarrer Minikube si besoin
+            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} start
             /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} update-context
             kubectl config use-context ${MINIKUBE_PROFILE}
             kubectl version --client
