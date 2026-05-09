@@ -19,7 +19,11 @@ public class NotificationService {
 
     @Async
     public void send(String to, String subject, String body) {
-        NotificationRequestDTO dto = new NotificationRequestDTO(to, subject, body);
-        notificationRestClient.sendNotification(dto);
+        try {
+            NotificationRequestDTO dto = new NotificationRequestDTO(to, subject, body);
+            notificationRestClient.sendNotification(dto);
+        } catch (Exception e) {
+            log.warn("Could not send notification to {}: {}", to, e.getMessage());
+        }
     }
 }

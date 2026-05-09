@@ -70,9 +70,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private void sendNotificationToUser(@NotNull User updatedUser) {
-        final String subject = "Authentication Successful";
-        final String body = String.format("You have just been successfully authenticated at %s", updatedUser.getLastLogin().toString());
-        notificationService.send(updatedUser.getEmail(), subject, body);
+        try {
+            final String subject = "Authentication Successful";
+            final String body = String.format(
+                    "You have just been successfully authenticated at %s",
+                    updatedUser.getLastLogin().toString());
+            notificationService.send(updatedUser.getEmail(), subject, body);
+        } catch (Exception e) {
+            log.warn("Post-login notification skipped for user {}: {}", updatedUser.getUsername(), e.getMessage());
+        }
     }
 
     private String generateToken(@NotNull User user) {

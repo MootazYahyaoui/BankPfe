@@ -40,9 +40,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    private @NotNull List<GrantedAuthority> getAuthorities(final @NotNull List<Role> roles) {
+    private @NotNull List<GrantedAuthority> getAuthorities(final List<Role> roles) {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(role.getName())));
+        if (roles != null) {
+            roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(role.getName())));
+        }
         return authorities;
     }
 }

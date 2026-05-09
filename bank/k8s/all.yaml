@@ -104,7 +104,7 @@ spec:
             - name: DISCOVERY_SERVICE
               value: http://discovery-service:8761/eureka/
             - name: ALLOWED_ORIGINS
-              value: http://localhost:4200,http://frontend:80
+              value: http://localhost:4200,http://frontend:80,http://127.0.0.1:8080,http://localhost:8080
 ---
 apiVersion: v1
 kind: Service
@@ -112,13 +112,12 @@ metadata:
   name: gateway-service
   namespace: bank
 spec:
+  type: ClusterIP
   selector:
     app: gateway-service
   ports:
     - port: 8888
       targetPort: 8888
-      nodePort: 30888
-  type: NodePort
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -324,10 +323,29 @@ metadata:
   name: frontend
   namespace: bank
 spec:
+  type: ClusterIP
   selector:
     app: bank-frontend
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30080
-  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bank-frontend
+  namespace: bank
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

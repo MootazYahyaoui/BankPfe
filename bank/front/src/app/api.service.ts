@@ -131,6 +131,24 @@ export class ApiService {
     return built;
   }
 
+  private formatHttpError(status: number, bodyText: string): string {
+    const trimmed = bodyText.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        const j = JSON.parse(trimmed) as { message?: string; error?: string };
+        if (j.message) {
+          return `HTTP ${status} - ${j.message}`;
+        }
+        if (j.error) {
+          return `HTTP ${status} - ${j.error}`;
+        }
+      } catch {
+        /* use raw body */
+      }
+    }
+    return `HTTP ${status}${trimmed ? ` - ${trimmed}` : ''}`;
+  }
+
   private async request<T>(input: string, init?: RequestInit, includeAuth = true): Promise<T> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.requestTimeoutMs);
@@ -142,7 +160,7 @@ export class ApiService {
       });
       if (!res.ok) {
         const details = await res.text();
-        throw new Error(`HTTP ${res.status}${details ? ` - ${details}` : ''}`);
+        throw new Error(this.formatHttpError(res.status, details));
       }
       return (await res.json()) as T;
     } catch (error) {
@@ -166,7 +184,7 @@ export class ApiService {
       });
       if (!res.ok) {
         const details = await res.text();
-        throw new Error(`HTTP ${res.status}${details ? ` - ${details}` : ''}`);
+        throw new Error(this.formatHttpError(res.status, details));
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
