@@ -4,6 +4,7 @@ import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mounanga.accountservice.commands.command.*;
+import org.mounanga.accountservice.commands.util.factory.EventFactory;
 import org.mounanga.accountservice.commands.exception.AccountNotActivatedException;
 import org.mounanga.accountservice.commands.exception.BalanceNotSufficientException;
 import org.mounanga.accountservice.common.enums.AccountStatus;
@@ -124,13 +125,7 @@ class AccountAggregateTest {
                 new BigDecimal("100.00"),
                 OperationType.CREDIT,
                 "Deposit description");
-        AccountCreditedEvent expectedEvent = new AccountCreditedEvent(
-                "acc123",
-                creditAt,
-                "admin",
-                new BigDecimal("100.00"),
-                OperationType.CREDIT,
-                "Deposit description");
+        AccountCreditedEvent expectedEvent = EventFactory.create(command);
 
         AccountCreatedEvent createdEvent = new AccountCreatedEvent(
                 "acc123",
