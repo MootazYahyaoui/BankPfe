@@ -107,12 +107,47 @@ pipeline {
             kubectl version --client
             kubectl get nodes
 
-            # Sinon: validate.nginx.ingress.kubernetes.io -> connection refused sur le webhook (443)
-            # tant que le controller ingress-nginx n'écoute pas encore après minikube start.
-            echo "Waiting for ingress-nginx controller (admission webhook ready)..."
+            # Sinon: validate.nginx.ingress.kubernetes.io -> connection refused / deadline exceeded
+            # (rollout OK mais endpoints admission ou TLS pas encore prêts).
+            echo "Waiting for ingress-nginx controller..."
             kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=300s
 
-            kubectl apply -f k8s/
+            echo "Waiting for ingress-nginx-controller-admission endpoints..."
+            i=0
+            while [ "$i" -lt 120 ]; do
+              ADDRS=$(kubectl get endpoints -n ingress-nginx ingress-nginx-controller-admission -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)
+              if [ -n "$ADDRS" ]; then
+                echo "Admission endpoints: OK"
+                break
+              fi
+              i=$((i + 1))
+              if [ $((i % 15)) -eq 0 ]; then echo "  ... still waiting ($i/120)"; fi
+              sleep 2
+            done
+            sleep 15
+
+            # Apiservers envoie souvent 10s au webhook; sous charge Minikube ca peut depasser -> 30s max (k8s 1.30).
+            WH=$(kubectl get validatingwebhookconfiguration -o name 2>/dev/null | grep -i ingress | head -1 || true)
+            if [ -n "$WH" ]; then
+              kubectl patch "$WH" --type=json \
+                -p='[{"op":"replace","path":"/webhooks/0/timeoutSeconds","value":30}]' 2>/dev/null || true
+            fi
+
+            echo "Applying k8s manifests (retry if admission webhook is slow)..."
+            APPLY_OK=0
+            for attempt in 1 2 3 4 5 6; do
+              if kubectl apply -f k8s/; then
+                APPLY_OK=1
+                break
+              fi
+              echo "kubectl apply failed (attempt $attempt/6), waiting 45s..."
+              kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=120s || true
+              sleep 45
+            done
+            if [ "$APPLY_OK" != "1" ]; then
+              echo "kubectl apply failed after retries"
+              exit 1
+            fi
 
             IMAGE_PREFIX=${DOCKERHUB_USERNAME}
 
