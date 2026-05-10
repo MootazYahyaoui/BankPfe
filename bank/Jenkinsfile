@@ -107,6 +107,11 @@ pipeline {
             kubectl version --client
             kubectl get nodes
 
+            # Sinon: validate.nginx.ingress.kubernetes.io -> connection refused sur le webhook (443)
+            # tant que le controller ingress-nginx n'écoute pas encore après minikube start.
+            echo "Waiting for ingress-nginx controller (admission webhook ready)..."
+            kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=300s
+
             kubectl apply -f k8s/
 
             IMAGE_PREFIX=${DOCKERHUB_USERNAME}
