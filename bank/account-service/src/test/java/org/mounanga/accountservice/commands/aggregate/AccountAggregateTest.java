@@ -10,13 +10,9 @@ import org.mounanga.accountservice.common.enums.AccountStatus;
 import org.mounanga.accountservice.common.enums.Currency;
 import org.mounanga.accountservice.common.enums.OperationType;
 import org.mounanga.accountservice.common.event.*;
-import org.springframework.boot.test.context.SpringBootTest;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-
-@SpringBootTest
 class AccountAggregateTest {
 
     private AggregateTestFixture<AccountAggregate> fixture;

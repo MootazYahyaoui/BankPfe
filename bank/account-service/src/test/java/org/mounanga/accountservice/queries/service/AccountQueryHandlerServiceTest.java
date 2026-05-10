@@ -2,7 +2,6 @@ package org.mounanga.accountservice.queries.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mounanga.accountservice.queries.dto.AccountResponseDTO;
 import org.mounanga.accountservice.queries.dto.OperationResponseDTO;
@@ -14,7 +13,8 @@ import org.mounanga.accountservice.queries.query.GetOperationByAccountId;
 import org.mounanga.accountservice.queries.query.GetOperationByIdQuery;
 import org.mounanga.accountservice.queries.reposiory.AccountRepository;
 import org.mounanga.accountservice.queries.reposiory.OperationRepository;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class AccountQueryHandlerServiceTest {
 
     @Mock
@@ -37,7 +37,6 @@ class AccountQueryHandlerServiceTest {
     @Mock
     private OperationRepository operationRepository;
 
-    @InjectMocks
     private AccountQueryHandlerService accountQueryHandlerService;
 
     private Account account;

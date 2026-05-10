@@ -2,7 +2,6 @@ package org.mounanga.accountservice.queries.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mounanga.accountservice.common.enums.AccountStatus;
 import org.mounanga.accountservice.common.enums.Currency;
@@ -13,7 +12,8 @@ import org.mounanga.accountservice.queries.entity.Operation;
 import org.mounanga.accountservice.queries.reposiory.AccountRepository;
 import org.mounanga.accountservice.queries.reposiory.OperationRepository;
 import org.mounanga.accountservice.queries.util.notification.NotificationService;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class AccountEventHandlerServiceTest {
 
     @Mock
@@ -36,7 +36,6 @@ class AccountEventHandlerServiceTest {
     @Mock
     private NotificationService notificationService;
 
-    @InjectMocks
     private AccountEventHandlerService accountEventHandlerService;
     Account account;
 

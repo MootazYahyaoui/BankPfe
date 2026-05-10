@@ -9,6 +9,7 @@ pipeline {
     string(name: 'DOCKERHUB_USERNAME', defaultValue: '', description: 'Docker Hub username (required if PUSH_IMAGES=true)')
     booleanParam(name: 'PUSH_IMAGES', defaultValue: false, description: 'Push images to Docker Hub')
     booleanParam(name: 'DEPLOY_MINIKUBE', defaultValue: false, description: 'Deploy to Minikube after image push')
+    booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Si coché: mvn -DskipTests (utile si les tests nécessitent une infra locale)')
   }
 
   environment {
@@ -28,7 +29,13 @@ pipeline {
     stage('Backend Build') {
       steps {
         dir('bank') {
-          sh 'mvn -DskipTests clean package'
+          script {
+            if (params.SKIP_TESTS) {
+              sh 'mvn -DskipTests clean package'
+            } else {
+              sh 'mvn clean package'
+            }
+          }
         }
       }
     }
@@ -85,40 +92,43 @@ pipeline {
       when {
         expression { return params.DEPLOY_MINIKUBE && params.PUSH_IMAGES && params.DOCKERHUB_USERNAME?.trim() }
       }
+      options {
+        timeout(time: 45, unit: 'MINUTES')
+      }
       steps {
         dir('bank') {
           sh '''
             export MINIKUBE_HOME=${MINIKUBE_HOME}
             export KUBECONFIG=${KUBECONFIG_PATH}
-            # Cluster arrêté -> update-context échoue ; démarrer Minikube si besoin
+            # Cluster arrêté -> démarrer Minikube puis aligner kubectl
             /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} start
             /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} update-context
             kubectl config use-context ${MINIKUBE_PROFILE}
             kubectl version --client
             kubectl get nodes
 
-            # Apply manifests (create/update resources)
             kubectl apply -f k8s/
 
             IMAGE_PREFIX=${DOCKERHUB_USERNAME}
 
-            # Update image tags to current build number
-            kubectl -n bank set image deployment/discovery-service discovery-service=${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG} || true
-            kubectl -n bank set image deployment/gateway-service gateway-service=${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG} || true
-            kubectl -n bank set image deployment/authentication-service authentication-service=${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG} || true
-            kubectl -n bank set image deployment/customer-service customer-service=${IMAGE_PREFIX}/customer-service:${IMAGE_TAG} || true
-            kubectl -n bank set image deployment/account-service account-service=${IMAGE_PREFIX}/account-service:${IMAGE_TAG} || true
-            kubectl -n bank set image deployment/notification-service notification-service=${IMAGE_PREFIX}/notification-service:${IMAGE_TAG} || true
-            kubectl -n bank set image deployment/bank-frontend bank-frontend=${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG} || true
+            # set image doit réussir (sinon pipeline en échec)
+            kubectl -n bank set image deployment/discovery-service discovery-service=${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG}
+            kubectl -n bank set image deployment/gateway-service gateway-service=${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG}
+            kubectl -n bank set image deployment/authentication-service authentication-service=${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG}
+            kubectl -n bank set image deployment/customer-service customer-service=${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}
+            kubectl -n bank set image deployment/account-service account-service=${IMAGE_PREFIX}/account-service:${IMAGE_TAG}
+            kubectl -n bank set image deployment/notification-service notification-service=${IMAGE_PREFIX}/notification-service:${IMAGE_TAG}
+            kubectl -n bank set image deployment/bank-frontend bank-frontend=${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG}
 
-            # Wait for rollouts
-            kubectl -n bank rollout status deployment/discovery-service --timeout=180s || true
-            kubectl -n bank rollout status deployment/gateway-service --timeout=180s || true
-            kubectl -n bank rollout status deployment/authentication-service --timeout=180s || true
-            kubectl -n bank rollout status deployment/customer-service --timeout=180s || true
-            kubectl -n bank rollout status deployment/account-service --timeout=180s || true
-            kubectl -n bank rollout status deployment/notification-service --timeout=180s || true
-            kubectl -n bank rollout status deployment/bank-frontend --timeout=180s || true
+            # Rollouts: timeout 8 min/service (anciens replicas parfoient longs à terminer sur petit CPU)
+            ROLLOUT_TO=480s
+            kubectl -n bank rollout status deployment/discovery-service --timeout=${ROLLOUT_TO}
+            kubectl -n bank rollout status deployment/gateway-service --timeout=${ROLLOUT_TO}
+            kubectl -n bank rollout status deployment/authentication-service --timeout=${ROLLOUT_TO}
+            kubectl -n bank rollout status deployment/customer-service --timeout=${ROLLOUT_TO}
+            kubectl -n bank rollout status deployment/account-service --timeout=${ROLLOUT_TO}
+            kubectl -n bank rollout status deployment/notification-service --timeout=${ROLLOUT_TO}
+            kubectl -n bank rollout status deployment/bank-frontend --timeout=${ROLLOUT_TO}
           '''
         }
       }
