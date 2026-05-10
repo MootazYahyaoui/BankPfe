@@ -116,15 +116,21 @@ class AccountAggregateTest {
 
     @Test
     void testCreditAccountCommand() {
-        CreditAccountCommand command = new CreditAccountCommand("acc123", LocalDateTime.now(), "admin", new BigDecimal("100.00"), OperationType.CREDIT, "Deposit description");
-        AccountCreditedEvent expectedEvent = new AccountCreditedEvent(
+        LocalDateTime creditAt = LocalDateTime.now();
+        CreditAccountCommand command = new CreditAccountCommand(
                 "acc123",
-                LocalDateTime.now(),
+                creditAt,
                 "admin",
                 new BigDecimal("100.00"),
                 OperationType.CREDIT,
-                "Deposit description"
-        );
+                "Deposit description");
+        AccountCreditedEvent expectedEvent = new AccountCreditedEvent(
+                "acc123",
+                creditAt,
+                "admin",
+                new BigDecimal("100.00"),
+                OperationType.CREDIT,
+                "Deposit description");
 
         AccountCreatedEvent createdEvent = new AccountCreatedEvent(
                 "acc123",
