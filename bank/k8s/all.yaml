@@ -337,32 +337,12 @@ metadata:
   namespace: bank
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    # Host explicites: sinon le default-backend ingress affiche "Welcome to nginx!" (tunnel 127.0.0.1:8080, etc.).
+    # Regex server-alias: permet de router même si le Host header n'est pas exactement "localhost".
     nginx.ingress.kubernetes.io/server-alias: "~^127\\.0\\.0\\.1(:[0-9]+)?$,~^192\\.168\\.58\\.2(:[0-9]+)?$,~^localhost(:[0-9]+)?$"
 spec:
   ingressClassName: nginx
   rules:
-    - host: "127.0.0.1"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
     - host: "localhost"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
-    - host: "192.168.58.2"
       http:
         paths:
           - path: /
