@@ -101,11 +101,16 @@ pipeline {
             export MINIKUBE_HOME=${MINIKUBE_HOME}
             export KUBECONFIG=${KUBECONFIG_PATH}
             # Cluster arrêté -> démarrer Minikube puis aligner kubectl
-            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} start
+            # --memory: machine ~3.5Go -> eviter 3072Mi pour le noeud (warning stabilité Minikube).
+            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} start --memory=2048
             /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} update-context
             kubectl config use-context ${MINIKUBE_PROFILE}
             kubectl version --client
             kubectl get nodes
+
+            # Apres recreation du conteneur, l'addon ingress n'est pas toujours actif -> namespace ingress-nginx absent.
+            echo "Ensuring ingress addon is enabled..."
+            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} addons enable ingress
 
             # Sinon: validate.nginx.ingress.kubernetes.io -> connection refused / deadline exceeded
             # (rollout OK mais endpoints admission ou TLS pas encore prêts).
