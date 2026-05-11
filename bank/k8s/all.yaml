@@ -323,12 +323,16 @@ metadata:
   name: frontend
   namespace: bank
 spec:
-  type: ClusterIP
+  # NodePort: accès fiable depuis l’hôte (tunnel SSH) sans dépendre du matching Host de l’Ingress.
+  # Exemple tunnel Windows: ssh -N -L 8080:<MINIKUBE_IP>:30080 root@<SERVEUR>
+  # Puis navigateur: http://127.0.0.1:8080/   (IP Minikube: minikube ip -p jenkins-ci)
+  type: NodePort
   selector:
     app: bank-frontend
   ports:
     - port: 80
       targetPort: 80
+      nodePort: 30080
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -337,21 +341,11 @@ metadata:
   namespace: bank
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    # Regex server-alias: permet de router même si le Host header n'est pas exactement "localhost".
+    # Accès navigateur recommandé: NodePort svc/frontend (30080). Cette Ingress reste pour accès via IP nœud :80 si besoin.
     nginx.ingress.kubernetes.io/server-alias: "~^127\\.0\\.0\\.1(:[0-9]+)?$,~^192\\.168\\.58\\.2(:[0-9]+)?$,~^localhost(:[0-9]+)?$"
 spec:
   ingressClassName: nginx
   rules:
-    - host: "localhost"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
     - http:
         paths:
           - path: /
