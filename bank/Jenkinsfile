@@ -154,7 +154,7 @@ pipeline {
                 echo "Applying k8s manifests (retry if admission webhook is slow)..."
                 APPLY_OK=0
                 for attempt in 1 2 3 4 5 6; do
-                  if kubectl apply -f k8s/; then
+                  if kubectl apply -f k8s/ && kubectl apply -f k8s/monitoring/; then
                     APPLY_OK=1
                     break
                   fi
