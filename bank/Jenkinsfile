@@ -95,86 +95,107 @@ pipeline {
       options {
         timeout(time: 45, unit: 'MINUTES')
       }
-      steps {
-        dir('bank') {
-          sh '''
-            export MINIKUBE_HOME=${MINIKUBE_HOME}
-            export KUBECONFIG=${KUBECONFIG_PATH}
-            # Cluster arrêté -> démarrer Minikube puis aligner kubectl
-            # --memory: machine ~3.5Go -> eviter 3072Mi pour le noeud (warning stabilité Minikube).
-            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} start --memory=2048
-            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} update-context
-            kubectl config use-context ${MINIKUBE_PROFILE}
-            kubectl version --client
-            kubectl get nodes
-
-            # Apres recreation du conteneur, l'addon ingress n'est pas toujours actif -> namespace ingress-nginx absent.
-            echo "Ensuring ingress addon is enabled..."
-            /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} addons enable ingress
-
-            # Sinon: validate.nginx.ingress.kubernetes.io -> connection refused / deadline exceeded
-            # (rollout OK mais endpoints admission ou TLS pas encore prêts).
-            echo "Waiting for ingress-nginx controller..."
-            kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=300s
-
-            echo "Waiting for ingress-nginx-controller-admission endpoints..."
-            i=0
-            while [ "$i" -lt 120 ]; do
-              ADDRS=$(kubectl get endpoints -n ingress-nginx ingress-nginx-controller-admission -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)
-              if [ -n "$ADDRS" ]; then
-                echo "Admission endpoints: OK"
-                break
-              fi
-              i=$((i + 1))
-              if [ $((i % 15)) -eq 0 ]; then echo "  ... still waiting ($i/120)"; fi
-              sleep 2
-            done
-            sleep 15
-
-            # Apiservers envoie souvent 10s au webhook; sous charge Minikube ca peut depasser -> 30s max (k8s 1.30).
-            WH=$(kubectl get validatingwebhookconfiguration -o name 2>/dev/null | grep -i ingress | head -1 || true)
-            if [ -n "$WH" ]; then
-              kubectl patch "$WH" --type=json \
-                -p='[{"op":"replace","path":"/webhooks/0/timeoutSeconds","value":30}]' 2>/dev/null || true
-            fi
-
-            echo "Applying k8s manifests (retry if admission webhook is slow)..."
-            APPLY_OK=0
-            for attempt in 1 2 3 4 5 6; do
-              if kubectl apply -f k8s/; then
-                APPLY_OK=1
-                break
-              fi
-              echo "kubectl apply failed (attempt $attempt/6), waiting 45s..."
-              kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=120s || true
-              sleep 45
-            done
-            if [ "$APPLY_OK" != "1" ]; then
-              echo "kubectl apply failed after retries"
-              exit 1
-            fi
-
-            IMAGE_PREFIX=${DOCKERHUB_USERNAME}
-
-            # set image doit réussir (sinon pipeline en échec)
-            kubectl -n bank set image deployment/discovery-service discovery-service=${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG}
-            kubectl -n bank set image deployment/gateway-service gateway-service=${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG}
-            kubectl -n bank set image deployment/authentication-service authentication-service=${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG}
-            kubectl -n bank set image deployment/customer-service customer-service=${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}
-            kubectl -n bank set image deployment/account-service account-service=${IMAGE_PREFIX}/account-service:${IMAGE_TAG}
-            kubectl -n bank set image deployment/notification-service notification-service=${IMAGE_PREFIX}/notification-service:${IMAGE_TAG}
-            kubectl -n bank set image deployment/bank-frontend bank-frontend=${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG}
-
-            # Rollouts: timeout 8 min/service (anciens replicas parfoient longs à terminer sur petit CPU)
-            ROLLOUT_TO=480s
-            kubectl -n bank rollout status deployment/discovery-service --timeout=${ROLLOUT_TO}
-            kubectl -n bank rollout status deployment/gateway-service --timeout=${ROLLOUT_TO}
-            kubectl -n bank rollout status deployment/authentication-service --timeout=${ROLLOUT_TO}
-            kubectl -n bank rollout status deployment/customer-service --timeout=${ROLLOUT_TO}
-            kubectl -n bank rollout status deployment/account-service --timeout=${ROLLOUT_TO}
-            kubectl -n bank rollout status deployment/notification-service --timeout=${ROLLOUT_TO}
-            kubectl -n bank rollout status deployment/bank-frontend --timeout=${ROLLOUT_TO}
-          '''
+      stages {
+        stage('K8s: cluster up') {
+          steps {
+            dir('bank') {
+              sh '''
+                export MINIKUBE_HOME=${MINIKUBE_HOME}
+                export KUBECONFIG=${KUBECONFIG_PATH}
+                /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} start --memory=2048
+                /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} update-context
+                kubectl config use-context ${MINIKUBE_PROFILE}
+                kubectl version --client
+                kubectl get nodes
+              '''
+            }
+          }
+        }
+        stage('K8s: Ingress ready') {
+          steps {
+            dir('bank') {
+              sh '''
+                export MINIKUBE_HOME=${MINIKUBE_HOME}
+                export KUBECONFIG=${KUBECONFIG_PATH}
+                kubectl config use-context ${MINIKUBE_PROFILE}
+                echo "Ensuring ingress addon is enabled..."
+                /usr/local/bin/minikube -p ${MINIKUBE_PROFILE} addons enable ingress
+                echo "Waiting for ingress-nginx controller..."
+                kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=300s
+                echo "Waiting for ingress-nginx-controller-admission endpoints..."
+                i=0
+                while [ "$i" -lt 120 ]; do
+                  ADDRS=$(kubectl get endpoints -n ingress-nginx ingress-nginx-controller-admission -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)
+                  if [ -n "$ADDRS" ]; then
+                    echo "Admission endpoints: OK"
+                    break
+                  fi
+                  i=$((i + 1))
+                  if [ $((i % 15)) -eq 0 ]; then echo "  ... still waiting ($i/120)"; fi
+                  sleep 2
+                done
+                sleep 15
+                WH=$(kubectl get validatingwebhookconfiguration -o name 2>/dev/null | grep -i ingress | head -1 || true)
+                if [ -n "$WH" ]; then
+                  kubectl patch "$WH" --type=json \
+                    -p='[{"op":"replace","path":"/webhooks/0/timeoutSeconds","value":30}]' 2>/dev/null || true
+                fi
+              '''
+            }
+          }
+        }
+        stage('K8s: apply manifests') {
+          steps {
+            dir('bank') {
+              sh '''
+                export MINIKUBE_HOME=${MINIKUBE_HOME}
+                export KUBECONFIG=${KUBECONFIG_PATH}
+                kubectl config use-context ${MINIKUBE_PROFILE}
+                echo "Applying k8s manifests (retry if admission webhook is slow)..."
+                APPLY_OK=0
+                for attempt in 1 2 3 4 5 6; do
+                  if kubectl apply -f k8s/; then
+                    APPLY_OK=1
+                    break
+                  fi
+                  echo "kubectl apply failed (attempt $attempt/6), waiting 45s..."
+                  kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=120s || true
+                  sleep 45
+                done
+                if [ "$APPLY_OK" != "1" ]; then
+                  echo "kubectl apply failed after retries"
+                  exit 1
+                fi
+              '''
+            }
+          }
+        }
+        stage('K8s: rollout images') {
+          steps {
+            dir('bank') {
+              sh '''
+                export MINIKUBE_HOME=${MINIKUBE_HOME}
+                export KUBECONFIG=${KUBECONFIG_PATH}
+                kubectl config use-context ${MINIKUBE_PROFILE}
+                IMAGE_PREFIX=${DOCKERHUB_USERNAME}
+                kubectl -n bank set image deployment/discovery-service discovery-service=${IMAGE_PREFIX}/discovery-service:${IMAGE_TAG}
+                kubectl -n bank set image deployment/gateway-service gateway-service=${IMAGE_PREFIX}/gateway-service:${IMAGE_TAG}
+                kubectl -n bank set image deployment/authentication-service authentication-service=${IMAGE_PREFIX}/authentication-service:${IMAGE_TAG}
+                kubectl -n bank set image deployment/customer-service customer-service=${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}
+                kubectl -n bank set image deployment/account-service account-service=${IMAGE_PREFIX}/account-service:${IMAGE_TAG}
+                kubectl -n bank set image deployment/notification-service notification-service=${IMAGE_PREFIX}/notification-service:${IMAGE_TAG}
+                kubectl -n bank set image deployment/bank-frontend bank-frontend=${IMAGE_PREFIX}/bank-frontend:${IMAGE_TAG}
+                ROLLOUT_TO=480s
+                kubectl -n bank rollout status deployment/discovery-service --timeout=${ROLLOUT_TO}
+                kubectl -n bank rollout status deployment/gateway-service --timeout=${ROLLOUT_TO}
+                kubectl -n bank rollout status deployment/authentication-service --timeout=${ROLLOUT_TO}
+                kubectl -n bank rollout status deployment/customer-service --timeout=${ROLLOUT_TO}
+                kubectl -n bank rollout status deployment/account-service --timeout=${ROLLOUT_TO}
+                kubectl -n bank rollout status deployment/notification-service --timeout=${ROLLOUT_TO}
+                kubectl -n bank rollout status deployment/bank-frontend --timeout=${ROLLOUT_TO}
+              '''
+            }
+          }
         }
       }
     }
