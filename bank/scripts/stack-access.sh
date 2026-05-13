@@ -14,6 +14,15 @@ if [[ -f /var/lib/jenkins/.kube/config ]]; then
   export KUBECONFIG="${KUBECONFIG:-/var/lib/jenkins/.kube/config}"
 fi
 
+# Profil Minikube Jenkins : données sous /var/lib/jenkins/.minikube (root seul ne les voit pas sinon).
+if [[ -d /var/lib/jenkins/.minikube ]]; then
+  export MINIKUBE_HOME="${MINIKUBE_HOME:-/var/lib/jenkins/.minikube}"
+fi
+
+is_ipv4() {
+  [[ -n "${1:-}" ]] && [[ "$1" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]
+}
+
 if [[ "$APPLY" == "1" ]]; then
   echo "==> Application des manifests (bank + monitoring/*.yaml uniquement)..."
   kubectl apply -f "$ROOT/k8s/"
@@ -26,12 +35,21 @@ if [[ "$APPLY" == "1" ]]; then
   echo ""
 fi
 
+# IP du noeud : kubectl d'abord ; minikube seulement si une ligne = IPv4 (pas les messages d'erreur sur stdout).
 IP=""
-if command -v minikube >/dev/null 2>&1; then
-  IP="$(minikube -p "$PROFILE" ip 2>/dev/null || true)"
+cand="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null | tr -d '\r\n' || true)"
+if is_ipv4 "$cand"; then IP="$cand"; fi
+if [[ -z "$IP" ]]; then
+  cand="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null | tr -d '\r\n' || true)"
+  if is_ipv4 "$cand"; then IP="$cand"; fi
 fi
 if [[ -z "$IP" ]]; then
-  IP="$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)"
+  cand="$(kubectl get nodes -o wide --no-headers 2>/dev/null | head -1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -1 || true)"
+  if is_ipv4 "$cand"; then IP="$cand"; fi
+fi
+if [[ -z "$IP" ]] && command -v minikube >/dev/null 2>&1; then
+  cand="$(minikube -p "$PROFILE" ip 2>/dev/null | grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$' | head -1 || true)"
+  if is_ipv4 "$cand"; then IP="$cand"; fi
 fi
 if [[ -z "$IP" ]]; then
   IP="<MINIKUBE_IP>"
