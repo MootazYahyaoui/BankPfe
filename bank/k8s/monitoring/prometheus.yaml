@@ -16,6 +16,26 @@ data:
         metrics_path: /actuator/prometheus
         static_configs:
           - targets: ["gateway-service.bank.svc.cluster.local:8888"]
+      - job_name: discovery-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets: ["discovery-service.bank.svc.cluster.local:8761"]
+      - job_name: authentication-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets: ["authentication-service.bank.svc.cluster.local:8885"]
+      - job_name: customer-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets: ["customer-service.bank.svc.cluster.local:8886"]
+      - job_name: account-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets: ["account-service.bank.svc.cluster.local:8887"]
+      - job_name: notification-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets: ["notification-service.bank.svc.cluster.local:8889"]
 ---
 apiVersion: apps/v1
 kind: Deployment
