@@ -224,6 +224,58 @@
       ],
       "title": "CPU processus (gateway)",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 103,
+      "panels": [],
+      "title": "Données Prometheus — aide",
+      "type": "row"
+    },
+    {
+      "type": "text",
+      "title": "Métriques disponibles (ton cluster)",
+      "gridPos": { "h": 7, "w": 14, "x": 0, "y": 25 },
+      "id": 200,
+      "options": {
+        "mode": "markdown",
+        "content": "### Jobs scrapés actuellement\n- **prometheus** — Prometheus se scrape lui-même.\n- **spring-gateway** — métriques Spring Boot sur `/actuator/prometheus` du service `gateway-service` (port 8888).\n\n### Exemples de requêtes (Explore ou panneaux)\n| But | PromQL |\n|-----|--------|\n| Cible OK ? | `up{job=\"spring-gateway\"}` |\n| Toutes les cibles | `up` |\n| Requêtes HTTP / s | `sum(rate(http_server_requests_seconds_count{job=\"spring-gateway\"}[5m]))` |\n| Trafic Spring Cloud Gateway | `sum(rate(spring_cloud_gateway_requests_seconds_count{job=\"spring-gateway\"}[5m]))` |\n| Mémoire heap JVM | `jvm_memory_used_bytes{job=\"spring-gateway\", area=\"heap\"}` |\n| CPU processus | `process_cpu_usage{job=\"spring-gateway\"}` |\n\n**Menu Grafana** : *Explore* → datasource *Prometheus* → colle une requête. **Prometheus UI** : *Status → Targets* pour voir si la gateway est UP."
+      },
+      "transparent": true
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prom-bank" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "stacking": { "group": "A", "mode": "none" }
+          },
+          "max": 1,
+          "min": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 10, "x": 14, "y": 25 },
+      "id": 201,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prom-bank" },
+          "expr": "up",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "UP par job (1 = scrape OK)",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",
@@ -235,6 +287,6 @@
   "timezone": "browser",
   "title": "Bank PFE — Vue plateforme",
   "uid": "bank-pfe-platform",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
