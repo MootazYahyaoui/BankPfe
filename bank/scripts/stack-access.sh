@@ -15,9 +15,13 @@ if [[ -f /var/lib/jenkins/.kube/config ]]; then
 fi
 
 if [[ "$APPLY" == "1" ]]; then
-  echo "==> Application des manifests (bank + monitoring)..."
+  echo "==> Application des manifests (bank + monitoring/*.yaml uniquement)..."
   kubectl apply -f "$ROOT/k8s/"
-  kubectl apply -f "$ROOT/k8s/monitoring/"
+  shopt -s nullglob
+  for f in "$ROOT/k8s/monitoring"/*.yaml "$ROOT/k8s/monitoring"/*.yml; do
+    kubectl apply -f "$f"
+  done
+  shopt -u nullglob
   echo "==> OK. Attends quelques secondes que les pods soient Ready si besoin."
   echo ""
 fi

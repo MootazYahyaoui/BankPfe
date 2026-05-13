@@ -1,4 +1,4 @@
-# Si tu modifies bank-platform-dashboard.json, régénère ce fichier (kubectl create configmap ... --from-file) ou resynchronise le JSON dans data.
+# Source du JSON : grafana/bank-platform-dashboard.json (hors k8s/ pour ne pas casser kubectl apply -f k8s/monitoring/).
 apiVersion: v1
 kind: ConfigMap
 metadata:
