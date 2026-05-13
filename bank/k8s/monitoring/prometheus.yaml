@@ -65,9 +65,11 @@ metadata:
   name: prometheus
   namespace: monitoring
 spec:
-  type: ClusterIP
+  # NodePort: même principe que Grafana — accès stable depuis l’hôte sans port-forward.
+  type: NodePort
   selector:
     app: prometheus
   ports:
     - port: 9090
       targetPort: 9090
+      nodePort: 30909
