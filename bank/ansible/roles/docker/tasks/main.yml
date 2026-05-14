@@ -1,41 +1,20 @@
 ---
-- name: Vérifier Ubuntu pour le dépôt Docker officiel (APT)
-  ansible.builtin.assert:
-    that:
-      - ansible_facts.distribution == "Ubuntu"
-    fail_msg: "Le rôle docker installe via le dépôt Docker pour Ubuntu. Pour Debian ou autre, étendre ce rôle."
-
-- name: Répertoire pour la clé Docker (keyring)
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: "0755"
-
-- name: Clé GPG Docker (Ubuntu)
-  ansible.builtin.get_url:
-    url: "https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}/gpg"
-    dest: /etc/apt/keyrings/docker.asc
-    mode: "0644"
-  when: ansible_facts.distribution == "Ubuntu"
-
-- name: Dépôt APT Docker (Ubuntu)
-  ansible.builtin.apt_repository:
-    repo: "deb [arch={{ docker_apt_arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts.distribution_release }} stable"
-    state: present
-    filename: docker
-  when: ansible_facts.distribution == "Ubuntu"
-
-- name: Paquets Docker Engine
-  ansible.builtin.apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
-    state: present
-    update_cache: true
+- name: Docker sur Debian / Ubuntu
+  ansible.builtin.include_tasks: ubuntu.yml
   when: ansible_facts.os_family == "Debian"
+
+- name: Docker sur RHEL compatible (Rocky, Alma, CentOS Stream, RHEL)
+  ansible.builtin.include_tasks: redhat.yml
+  when: ansible_facts.os_family == "RedHat"
+
+- name: Distribution non prise en charge par le rôle docker
+  ansible.builtin.fail:
+    msg: >-
+      OS non supporté : {{ ansible_facts.distribution }}
+      (famille {{ ansible_facts.os_family }}).
+      Étendre roles/docker pour cette plateforme.
+  when:
+    - ansible_facts.os_family not in ['Debian', 'RedHat']
 
 - name: Activer et démarrer le service Docker
   ansible.builtin.service:

@@ -1,0 +1,27 @@
+---
+# Rocky, AlmaLinux, CentOS Stream : dépôt « centos » ; RHEL : dépôt « rhel » (Docker officiel).
+- name: Famille de dépôt RPM Docker
+  ansible.builtin.set_fact:
+    _docker_rpm_dist: "{{ 'rhel' if ansible_facts.distribution == 'RedHat' else 'centos' }}"
+
+- name: dnf-plugins-core (config-manager / deps)
+  ansible.builtin.dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Dépôt Docker CE (fichier .repo)
+  ansible.builtin.get_url:
+    url: "https://download.docker.com/linux/{{ _docker_rpm_dist }}/docker-ce.repo"
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: "0644"
+
+- name: Paquets Docker Engine (DNF)
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true

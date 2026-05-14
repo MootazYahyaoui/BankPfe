@@ -5,7 +5,7 @@
     cache_valid_time: 3600
   when: ansible_facts.os_family == "Debian"
 
-- name: Paquets de base pour admin et diagnostics
+- name: Paquets de base pour admin et diagnostics (APT)
   ansible.builtin.apt:
     name:
       - ca-certificates
@@ -18,3 +18,14 @@
       - python3-apt
     state: present
   when: ansible_facts.os_family == "Debian"
+
+- name: Paquets de base pour admin et diagnostics (DNF / Rocky, RHEL, Alma…)
+  ansible.builtin.dnf:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg2
+      - git
+      - python3
+    state: present
+  when: ansible_facts.os_family == "RedHat"

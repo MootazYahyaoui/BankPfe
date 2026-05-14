@@ -1,11 +1,13 @@
 # Ansible — VM CI (Docker, kubectl, Minikube)
 
-Automatisation **pas à pas** pour préparer une machine Ubuntu (VM Jenkins / Minikube) : paquets de base, Docker Engine, `kubectl`, `minikube`, puis optionnellement `minikube start`.
+Automatisation **pas à pas** pour préparer une machine de build / CI : paquets de base, Docker Engine, `kubectl`, `minikube`, puis optionnellement `minikube start`.
 
 ## Prérequis
 
 - **Contrôleur** : Ansible 2.14+ (Linux, WSL Ubuntu, ou macOS). Sous Windows pur, utilise **WSL2** ou lance Ansible depuis la VM.
-- **Cible** : **Ubuntu** x64 ou arm64 (le rôle Docker utilise le dépôt officiel Docker pour Ubuntu).
+- **Cible** :
+  - **Ubuntu** (x64 / arm64) : dépôt Docker APT officiel.
+  - **Rocky Linux, AlmaLinux, CentOS Stream, RHEL 9** : paquets via **DNF** et dépôt Docker CE (`centos` ou `rhel` selon la distro).
 
 ## Inventaire
 
@@ -86,5 +88,6 @@ Après le rôle **docker**, l’utilisateur est ajouté au groupe `docker` : **o
 
 ## Limites connues
 
-- Rôle **docker** : **Ubuntu uniquement** (assert dans le rôle). Étendre le dépôt APT si tu cibles Debian.
+- **Fedora** : famille `RedHat` mais le dépôt Docker CE peut différer ; tester ou exclure dans l’inventaire.
+- Conflit possible avec **`podman-docker`** : le retirer si `dnf install docker-ce` se plaint de fichiers en conflit.
 - `04-minikube-start.yml` est en `become: false` : le profil Minikube est celui de l’**utilisateur SSH**. Pour un profil sous `/var/lib/jenkins`, connecte-toi en `jenkins` ou exporte `MINIKUBE_HOME` côté session (voir ton `Jenkinsfile`).
