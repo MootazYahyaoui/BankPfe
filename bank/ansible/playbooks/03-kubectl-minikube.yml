@@ -1,0 +1,7 @@
+---
+# Étape 3 : kubectl + minikube (binaires sous /usr/local/bin)
+- name: Outils Kubernetes
+  hosts: bank_ci
+  become: true
+  roles:
+    - kubectl_minikube

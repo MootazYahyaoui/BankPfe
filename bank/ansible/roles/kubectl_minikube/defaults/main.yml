@@ -1,0 +1,4 @@
+---
+kubectl_arch: "{{ 'arm64' if ansible_facts.architecture == 'aarch64' else 'amd64' }}"
+# Optionnel : sha256 du binaire kubectl pour sécuriser les téléchargements
+# kubectl_checksum: "sha256:..."

@@ -1,0 +1,30 @@
+---
+- name: Binaire kubectl
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/{{ kubectl_arch }}/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: "0755"
+
+- name: Vérifier kubectl
+  ansible.builtin.command: kubectl version --client=true -o yaml
+  register: kubectl_client
+  changed_when: false
+
+- name: Afficher version kubectl (extrait)
+  ansible.builtin.debug:
+    msg: "{{ (kubectl_client.stdout_lines | default(['(vide)']))[:3] }}"
+
+- name: Archive minikube
+  ansible.builtin.get_url:
+    url: "https://github.com/kubernetes/minikube/releases/download/v{{ minikube_version }}/minikube-linux-{{ kubectl_arch }}"
+    dest: /usr/local/bin/minikube
+    mode: "0755"
+
+- name: Vérifier minikube
+  ansible.builtin.command: minikube version
+  register: minikube_ver
+  changed_when: false
+
+- name: Afficher version minikube
+  ansible.builtin.debug:
+    msg: "{{ minikube_ver.stdout_lines }}"

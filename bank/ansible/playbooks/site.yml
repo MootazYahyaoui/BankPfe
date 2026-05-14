@@ -1,0 +1,6 @@
+---
+# Bootstrap complet VM CI (sans démarrage Minikube). Ordre : ping → paquets → docker → kubectl/minikube.
+- import_playbook: 00-ping.yml
+- import_playbook: 01-base-packages.yml
+- import_playbook: 02-docker.yml
+- import_playbook: 03-kubectl-minikube.yml

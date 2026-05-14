@@ -1,0 +1,10 @@
+---
+# Versions (pin explicite pour reproductibilité PFE)
+kubectl_version: "1.29.14"
+minikube_version: "1.35.0"
+
+# Démarrage Minikube (playbook 04) : activer avec -e minikube_start=true
+minikube_profile: jenkins-ci
+minikube_start: false
+minikube_memory_mb: 2048
+minikube_driver: docker

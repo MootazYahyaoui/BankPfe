@@ -1,0 +1,28 @@
+---
+# Tests / valorisation : vérifier que les outils répondent (idempotent, lecture seule).
+- name: Vérification outils Bank CI
+  hosts: bank_ci
+  become: false
+  tasks:
+    - name: docker --version
+      ansible.builtin.command: docker --version
+      register: _dv
+      changed_when: false
+
+    - name: kubectl version client
+      ansible.builtin.command: kubectl version --client -o yaml
+      register: _kv
+      changed_when: false
+
+    - name: minikube version
+      ansible.builtin.command: minikube version
+      register: _mv
+      changed_when: false
+
+    - name: Synthèse
+      ansible.builtin.assert:
+        that:
+          - "'Docker version' in _dv.stdout"
+          - _kv.rc == 0
+          - _mv.rc == 0
+        success_msg: "Docker, kubectl et minikube répondent correctement."

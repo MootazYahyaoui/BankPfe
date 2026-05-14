@@ -1,0 +1,4 @@
+---
+# Comme site.yml + tentative de minikube start (nécessite -e minikube_start=true).
+- import_playbook: site.yml
+- import_playbook: 04-minikube-start.yml

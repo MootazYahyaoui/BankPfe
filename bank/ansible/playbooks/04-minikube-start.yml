@@ -1,0 +1,53 @@
+---
+# Étape 4 (optionnelle) : démarrer le cluster Minikube (profil défini dans group_vars).
+# Sans become : le profil Minikube est créé dans le HOME de l'utilisateur SSH (recommandé).
+# Usage :
+#   ansible-playbook playbooks/04-minikube-start.yml -e minikube_start=true
+# Avec MINIKUBE_HOME explicite (ex. utilisateur jenkins) :
+#   ansible-playbook playbooks/04-minikube-start.yml -e minikube_start=true \
+#     -e ansible_ssh_user=jenkins --extra-vars '{"ansible_env":{...}}'  # voir README
+
+- name: Démarrage Minikube (optionnel)
+  hosts: bank_ci
+  gather_facts: true
+  become: false
+  vars:
+    _minikube_start: "{{ minikube_start | default(false) | bool }}"
+  tasks:
+    - name: Bloc Minikube start
+      when: _minikube_start
+      block:
+        - name: Vérifier accès Docker (client)
+          ansible.builtin.command: docker info
+          register: _docker_info
+          changed_when: false
+
+        - name: Démarrer Minikube
+          ansible.builtin.command:
+            argv:
+              - minikube
+              - start
+              - -p
+              - "{{ minikube_profile }}"
+              - --driver={{ minikube_driver }}
+              - --memory={{ minikube_memory_mb }}
+              - --force
+          environment:
+            MINIKUBE_HOME: "{{ ansible_env.get('MINIKUBE_HOME', (ansible_env.HOME | default('')) + '/.minikube') }}"
+          changed_when: true
+
+        - name: Statut cluster
+          ansible.builtin.command: minikube status -p "{{ minikube_profile }}"
+          environment:
+            MINIKUBE_HOME: "{{ ansible_env.get('MINIKUBE_HOME', (ansible_env.HOME | default('')) + '/.minikube') }}"
+          register: mk_status
+          changed_when: false
+
+        - name: Afficher statut
+          ansible.builtin.debug:
+            var: mk_status.stdout_lines
+
+    - name: Information si minikube_start est faux
+      ansible.builtin.debug:
+        msg: "Aucun démarrage : passer -e minikube_start=true pour lancer minikube start."
+      when: not _minikube_start

@@ -1,0 +1,7 @@
+---
+# Étape 2 : Docker Engine + démarrage du service
+- name: Installation Docker
+  hosts: bank_ci
+  become: true
+  roles:
+    - docker

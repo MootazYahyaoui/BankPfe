@@ -1,0 +1,12 @@
+---
+# Étape 0 : connectivité SSH et Python sur la cible
+- name: Ping / gather facts
+  hosts: bank_ci
+  gather_facts: true
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
+
+    - name: Résumé hôte
+      ansible.builtin.debug:
+        msg: "{{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }} ({{ ansible_facts.architecture }})"

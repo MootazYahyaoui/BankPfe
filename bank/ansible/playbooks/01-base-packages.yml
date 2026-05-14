@@ -1,0 +1,7 @@
+---
+# Étape 1 : paquets utilitaires (apt update, curl, git, python3…)
+- name: Paquets de base
+  hosts: bank_ci
+  become: true
+  roles:
+    - common
